@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+
+<meta charset="UTF-8">
+<title>Simulador de Liquidez Imobiliária</title>
+
+<style>
+
+body{
+font-family:Arial;
+background:#f4f6f9;
+padding:40px;
+}
+
+.container{
+max-width:1000px;
+margin:auto;
+background:white;
+padding:30px;
+border-radius:10px;
+box-shadow:0 4px 12px rgba(0,0,0,0.1);
+}
+
+.grid{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:20px;
+}
+
+label{
+font-weight:bold;
+}
+
+input,select{
+width:100%;
+padding:10px;
+margin-top:5px;
+border-radius:6px;
+border:1px solid #ccc;
+}
+
+button{
+margin-top:25px;
+padding:14px;
+width:100%;
+background:#111827;
+color:white;
+border:none;
+border-radius:8px;
+font-size:16px;
+cursor:pointer;
+}
+
+.results{
+margin-top:30px;
+background:#f1f5f9;
+padding:20px;
+border-radius:8px;
+}
+
+.big{
+font-size:28px;
+font-weight:bold;
+}
+
+.scenario{
+margin-top:15px;
+padding:15px;
+background:white;
+border-radius:8px;
+border:1px solid #ddd;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>Simulador de Liquidez Imobiliária</h1>
+
+<p>Descubra quanto poderá transformar em liquidez mantendo o direito de habitação.</p>
+
+<div class="grid">
+
+<div>
+<label>Idade</label>
+<input id="age" type="number" value="72">
+</div>
+
+<div>
+<label>Valor do imóvel (€)</label>
+<input id="value" type="number" value="300000">
+</div>
+
+<div>
+<label>Localização</label>
+
+<select id="location">
+<option value="1.06">Grande Lisboa</option>
+<option value="1.04">Grande Porto</option>
+<option value="1.05">Algarve</option>
+<option value="1">Outras zonas</option>
+</select>
+
+</div>
+
+<div>
+<label>Estado do imóvel</label>
+
+<select id="condition">
+<option value="1">Bom</option>
+<option value="0.95">Médio</option>
+<option value="0.88">A remodelar</option>
+</select>
+
+</div>
+
+<div>
+<label>Rendimento mensal desejado (€)</label>
+<input id="income" type="number" value="750">
+</div>
+
+</div>
+
+<button onclick="calculate()">Calcular Simulação</button>
+
+<div class="results">
+
+<h3>Resultado da simulação</h3>
+
+<p>Liquidez estimada imediata:</p>
+<div id="upfront" class="big">—</div>
+
+<p style="margin-top:15px">Rendimento mensal sustentável:</p>
+<div id="monthly" class="big">—</div>
+
+<div class="scenario">
+
+<b>Cenário 30% monetização</b>
+
+<p id="scenario30"></p>
+
+</div>
+
+<div class="scenario">
+
+<b>Cenário 50% monetização</b>
+
+<p id="scenario50"></p>
+
+</div>
+
+</div>
+
+</div>
+
+<script>
+
+function getUsufructRate(age){
+
+if(age < 60) return 0.45
+if(age <=64) return 0.40
+if(age <=69) return 0.35
+if(age <=74) return 0.30
+if(age <=79) return 0.25
+if(age <=84) return 0.20
+
+return 0.15
+
+}
+
+function currency(v){
+
+return v.toLocaleString(
+"pt-PT",
+{style:"currency",currency:"EUR"}
+)
+
+}
+
+function calculate(){
+
+let age = Number(document.getElementById("age").value)
+
+let value = Number(document.getElementById("value").value)
+
+let location = Number(document.getElementById("location").value)
+
+let condition = Number(document.getElementById("condition").value)
+
+let income = Number(document.getElementById("income").value)
+
+let usufruct = getUsufructRate(age)
+
+let bare = 1 - usufruct
+
+let adjustedValue = value * location * condition
+
+let upfront = adjustedValue * bare
+
+let sustainableMonthly = (upfront * 0.05) / 12
+
+let capitalNeeded = (income * 12) / 0.05
+
+let scenario30 = upfront * 0.3
+
+let scenario50 = upfront * 0.5
+
+document.getElementById("upfront").innerHTML = currency(upfront)
+
+document.getElementById("monthly").innerHTML = currency(sustainableMonthly)
+
+document.getElementById("scenario30").innerHTML =
+"Liquidez estimada: " + currency(scenario30)
+
+document.getElementById("scenario50").innerHTML =
+"Liquidez estimada: " + currency(scenario50)
+
+}
+
+</script>
+
+</body>
+</html>
