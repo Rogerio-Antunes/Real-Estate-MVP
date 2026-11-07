@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AUGI · Coordenadas da caderneta → Google Maps</title>
+<meta name="description" content="Converte as coordenadas X/Y das cadernetas prediais em latitude/longitude para o Google Maps. Processamento local.">
+<link rel="stylesheet" href="vendor/leaflet/leaflet.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main class="wrap">
+  <header>
+    <div class="eyebrow">Proptycs · AUGI</div>
+    <h1>Caderneta predial → Google Maps</h1>
+    <p>Cola a Coordenada X e a Coordenada Y da caderneta e abre o local no Google Maps. A conversão é feita no teu navegador; as coordenadas não são enviadas para nenhum servidor.</p>
+  </header>
+
+  <div class="layout">
+    <section class="panel" aria-labelledby="h-in">
+      <h2 id="h-in" class="sr">Coordenadas de origem</h2>
+      <div class="tabs" role="tablist" aria-label="Tipo de coordenadas">
+        <button class="tab active" role="tab" aria-selected="true" aria-controls="p-cad" id="t-cad" data-tab="cad">Caderneta predial</button>
+        <button class="tab" role="tab" aria-selected="false" aria-controls="p-lista" id="t-lista" data-tab="lista" tabindex="-1">Lista de cadernetas</button>
+        <button class="tab minor" role="tab" aria-selected="false" aria-controls="p-mgrs" id="t-mgrs" data-tab="mgrs" tabindex="-1">MGRS</button>
+        <button class="tab minor" role="tab" aria-selected="false" aria-controls="p-utm" id="t-utm" data-tab="utm" tabindex="-1">UTM</button>
+        <button class="tab minor" role="tab" aria-selected="false" aria-controls="p-ll" id="t-ll" data-tab="ll" tabindex="-1">Lat / Lon</button>
+      </div>
+
+      <div class="field" id="datum-wrap" hidden>
+        <label for="datum">Datum da carta ou documento</label>
+        <select id="datum">
+          <option value="wgs84">WGS84 (ETRS89 equivalente para este fim)</option>
+          <option value="other">ED50 / Datum Lisboa / Datum 73 / não sei</option>
+        </select>
+        <p class="hint">Confirma o datum na margem da carta. Ler valores ED50 como WGS84 desloca o ponto cerca de uma centena de metros ou mais.</p>
+      </div>
+      <div class="notice" id="datum-warn" hidden>
+        <b>Datum ainda não suportado.</b> Esta versão converte apenas coordenadas WGS84 (MGRS, UTM e lat/lon). A conversão de ED50, Datum Lisboa, Datum 73 e PT-TM06 está prevista para uma próxima versão e usará transformações oficiais. Não faças a conversão como WGS84 para o resultado não ficar errado.
+      </div>
+
+      <div id="p-cad" class="section active" role="tabpanel" aria-labelledby="t-cad">
+        <div class="grid">
+          <div><label for="cadX">Coordenada X</label><input id="cadX" inputmode="decimal" autocomplete="off" placeholder="158.892,00" value="158.892,00"></div>
+          <div><label for="cadY">Coordenada Y</label><input id="cadY" inputmode="decimal" autocomplete="off" placeholder="281.870,00" value="281.870,00"></div>
+        </div>
+        <p class="hint">Copia os valores tal como aparecem na caderneta (ex.: 158.892,00). Portugal continental.</p>
+        <details class="adv">
+          <summary>Opções avançadas</summary>
+          <label for="cadSys">Sistema das coordenadas</label>
+          <select id="cadSys">
+            <option value="hgm">Hayford-Gauss militar · Datum Lisboa (EPSG:20790) — usado nas cadernetas</option>
+            <option value="tm06">PT-TM06 / ETRS89 (EPSG:3763)</option>
+            <option value="d73">Datum 73 (EPSG:27493)</option>
+          </select>
+          <p class="hint">Nos casos que verificámos, as cadernetas usam a primeira opção. Só mudes se tiveres a certeza de que o documento usa outro sistema.</p>
+        </details>
+      </div>
+
+      <div id="p-lista" class="section" role="tabpanel" aria-labelledby="t-lista">
+        <label for="listaVal">Uma caderneta por linha (X e Y)</label>
+        <textarea id="listaVal" rows="7" spellcheck="false" placeholder="158.892,00 281.870,00&#10;87.420,00 193.257,00">158.892,00 281.870,00
+87.420,00 193.257,00</textarea>
+        <p class="hint">Separa X e Y com espaço, tab ou ponto e vírgula (podes colar de uma folha de cálculo). Usa o sistema das cadernetas (Hayford-Gauss militar, Datum Lisboa).</p>
+      </div>
+
+      <div id="p-mgrs" class="section" role="tabpanel" aria-labelledby="t-mgrs">
+        <label for="mgrsVal">Referência MGRS</label>
+        <input id="mgrsVal" autocomplete="off" spellcheck="false" placeholder="Ex.: 29S MC 12345 67890" value="29S MC 87890 85969">
+        <p class="hint">Com ou sem espaços. Menos dígitos significam menos precisão (a ferramenta devolve o centro da quadrícula).</p>
+      </div>
+      <div id="p-utm" class="section" role="tabpanel" aria-labelledby="t-utm">
+        <div class="grid">
+          <div><label for="zone">Zona UTM (1–60)</label><input id="zone" type="number" min="1" max="60" value="29"></div>
+          <div><label for="hem">Hemisfério</label><select id="hem"><option value="N">Norte</option><option value="S">Sul</option></select></div>
+          <div><label for="east">Este (m)</label><input id="east" type="number" step="any" value="500000"></div>
+          <div><label for="north">Norte (m)</label><input id="north" type="number" step="any" value="4300000"></div>
+        </div>
+      </div>
+      <div id="p-ll" class="section" role="tabpanel" aria-labelledby="t-ll">
+        <label for="llVal">Latitude e longitude</label>
+        <input id="llVal" autocomplete="off" spellcheck="false" placeholder="38.7223, -9.1393" value="38.7223, -9.1393">
+        <p class="hint">Graus decimais (cola do Google Maps), graus-minutos-segundos (38°43′20″N 9°8′21″W) ou graus e minutos decimais.</p>
+      </div>
+
+      <div class="actions">
+        <button id="convert" class="primary">Converter</button>
+        <button id="clear" class="secondary" type="button">Limpar</button>
+      </div>
+      <div class="error" id="error" role="alert" hidden></div>
+    </section>
+
+    <section class="panel result" id="result" aria-labelledby="h-out" hidden>
+      <h2 id="h-out" class="sr">Resultado</h2>
+      <div class="eyebrow">Resultado · WGS84 / EPSG:4326</div>
+      <div class="val" id="decimal"></div>
+      <p class="dms" id="dms"></p>
+      <dl class="eq">
+        <div><dt>MGRS</dt><dd id="o-mgrs"></dd></div>
+        <div><dt>UTM</dt><dd id="o-utm"></dd></div>
+      </dl>
+      <p class="hint" id="precision"></p>
+      <details id="alts" class="adv" hidden>
+        <summary>Verificar outras interpretações dos mesmos X/Y</summary>
+        <ul id="altList" class="alts"></ul>
+      </details>
+      <div class="actions">
+        <button id="copy" type="button">Copiar</button>
+        <a id="maps" class="btnlink" target="_blank" rel="noopener noreferrer" href="#">Google Maps ↗</a>
+        <a id="osm" class="btnlink secondary" target="_blank" rel="noopener noreferrer" href="#">OpenStreetMap ↗</a>
+      </div>
+      <div class="actions small">
+        <button id="csv" class="secondary" type="button">CSV</button>
+        <button id="geojson" class="secondary" type="button">GeoJSON</button>
+        <button id="share" class="secondary" type="button">Copiar ligação</button>
+      </div>
+    </section>
+  </div>
+
+  <section class="panel" id="batch" hidden>
+    <h2 style="font-size:17px;margin:0 0 6px">Resultados</h2>
+    <p class="hint" id="batchSummary"></p>
+    <div class="tablewrap"><table id="batchTable"><thead><tr><th>#</th><th>X</th><th>Y</th><th>Latitude, longitude</th><th></th></tr></thead><tbody></tbody></table></div>
+    <div class="actions"><button id="batchCsv" type="button">Descarregar CSV</button><button id="batchCopy" class="secondary" type="button">Copiar tabela</button></div>
+  </section>
+
+  <section class="panel mapwrap">
+    <div id="map" role="region" aria-label="Mapa com a localização"></div>
+  </section>
+
+  <section class="panel">
+    <div class="notice"><b>Precisão e utilização:</b> a posição indicada na caderneta é aproximada e a conversão tem uma incerteza de alguns metros. Esta ferramenta é uma ajuda de consulta e não substitui levantamento topográfico, cadastro ou confirmação jurídica da localização.</div>
+  </section>
+  <footer>Proptycs · AUGI — conversão matemática local (proj4js). Mapa © contribuidores do <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a>; os mosaicos do mapa são pedidos ao servidor do OSM e não contêm as tuas coordenadas de origem.</footer>
+</main>
+<script src="vendor/proj4/proj4.js"></script>
+<script src="vendor/leaflet/leaflet.js"></script>
+<script src="geo.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
